@@ -121,7 +121,7 @@ spec:
         storage:
           volumeClaimTemplate:
             spec:
-              storageClassName: local-path
+              storageClassName: longhorn
               resources:
                 requests:
                   storage: 1Gi
@@ -160,8 +160,8 @@ spec:
       enabled: true
       endpoints: ["192.168.200.201"]
     kubeProxy:
-      enabled: false # Enable if not using eBPF
-      # endpoints: ["192.168.42.10", "192.168.42.11", "192.168.42.12"]
+      enabled: true # Enable if not using eBPF
+      endpoints: ["192.168.200.201"]
     kubeEtcd:
       enabled: true
       endpoints: ["192.168.200.201"]
