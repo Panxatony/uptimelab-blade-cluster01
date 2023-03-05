@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: ghost
-      version: 19.1.77
+      version: 19.1.76
       sourceRef:
         kind: HelmRepository
         name: bitnami
@@ -27,7 +27,7 @@ spec:
     keepHistory: false
   values:
     ghost:
-      ghostBlogTitle: Uptime Labs Blade based Cluster
+      ghostBlogTitle: "Uptime Labs Blade based Cluster"
       namespaceSelector:
         matchNames:
           - default
@@ -54,5 +54,5 @@ spec:
         type: emptyDir
     resources:
       requests:
-        cpu: 100m
-        memory: 128M
+        cpu: 500m
+        memory: 1024M
