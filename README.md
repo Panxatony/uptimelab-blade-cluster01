@@ -1,8 +1,8 @@
-# Template for deploying k3s backed by Flux
+# Uptime Labs Compute Blade based Homelab Kubernetes Cluster
 
-Highly opinionated template for deploying a single [k3s](https://k3s.io) cluster with [Ansible](https://www.ansible.com) and [Terraform](https://www.terraform.io) backed by [Flux](https://toolkit.fluxcd.io/) and [SOPS](https://toolkit.fluxcd.io/guides/mozilla-sops/).
+This is a mono repository for my [Uptime Compute Blade](https://computeblade.com) based Homelab Kubernetes cluster. This cluster is based on Infrastructure as Code (IaC) and GitOps practices using the tools like Ansible, Terraform, Kubernetes, Flux and Renovate.
 
-The purpose here is to showcase how you can deploy an entire Kubernetes cluster and show it off to the world using the [GitOps](https://www.weave.works/blog/what-is-gitops-really) tool [Flux](https://toolkit.fluxcd.io/). When completed, your Git repository will be driving the state of your Kubernetes cluster. In addition with the help of the [Ansible](https://github.com/ansible-collections/community.sops), [Terraform](https://github.com/carlpett/terraform-provider-sops) and [Flux](https://toolkit.fluxcd.io/guides/mozilla-sops/) SOPS integrations you'll be able to commit [Age](https://github.com/FiloSottile/age) encrypted secrets to your public repo.
+This Cluster is based on [onedr0p/flux-cluster-template](https://github.com/onedr0p/flux-cluster-template).
 
 ## Overview
 
@@ -17,7 +17,7 @@ The purpose here is to showcase how you can deploy an entire Kubernetes cluster 
 
 ## 👋 Introduction
 
-The following components will be installed in your [k3s](https://k3s.io/) cluster by default. Most are only included to get a minimum viable cluster up and running.
+The following components are installed in the [k3s](https://k3s.io/) cluster. Most are only included to get a minimum viable cluster up and running.
 
 - [flux](https://toolkit.fluxcd.io/) - GitOps operator for managing Kubernetes clusters from a Git repository
 - [kube-vip](https://kube-vip.io/) - Load balancer for the Kubernetes control plane nodes
@@ -27,7 +27,7 @@ The following components will be installed in your [k3s](https://k3s.io/) cluste
 - [external-dns](https://github.com/kubernetes-sigs/external-dns) - Operator to publish DNS records to Cloudflare (and other providers) based on Kubernetes ingresses
 - [k8s_gateway](https://github.com/ori-edge/k8s_gateway) - DNS resolver that provides local DNS to your Kubernetes ingresses
 - [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) - Kubernetes ingress controller used for a HTTP reverse proxy of Kubernetes ingresses
-- [local-path-provisioner](https://github.com/rancher/local-path-provisioner) - provision persistent local storage with Kubernetes
+- [longhorn](https://longhorn.io) - provision persistent local storage with Kubernetes
 
 _Additional applications include [hajimari](https://github.com/toboshii/hajimari), [error-pages](https://github.com/tarampampam/error-pages), [echo-server](https://github.com/Ealenn/Echo-Server), [system-upgrade-controller](https://github.com/rancher/system-upgrade-controller), [reloader](https://github.com/stakater/Reloader), and [kured](https://github.com/weaveworks/kured)_
 
@@ -38,22 +38,14 @@ For provisioning the following tools will be used:
 
 ## 📝 Prerequisites
 
-**Note:** _This template has not been tested on cloud providers like AWS EC2, Hetzner, Scaleway etc... Those cloud offerings probably have a better way of provsioning a Kubernetes cluster and it's advisable to use those instead of the Ansible playbooks included here. This repository can still be tweaked for the GitOps/Flux portion if there's a cluster working in one those environments._
-
-First and foremost some experience in debugging/troubleshooting problems **and a positive attitude is required** ;)
-
 ### 📚 Reading material
 
 - [Organizing Cluster Access Using kubeconfig Files](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
 
 ### 💻 Systems
 
-- One or more nodes with a fresh install of [Fedora Server 36](https://getfedora.org/en/server/download/) or [Ubuntu 22.04 Server](https://ubuntu.com/download/server).
-  - These nodes can be ARM64/AMD64 bare metal or VMs.
-  - An odd number of control plane nodes, greater than or equal to 3 is required if deploying more than one control plane node.
-- A [Cloudflare](https://www.cloudflare.com/) account with a domain, this will be managed by Terraform and external-dns. You can [register new domains](https://www.cloudflare.com/products/registrar/) directly thru Cloudflare.
-
-📍 It is recommended to have 3 master nodes for a highly available control plane.
+- 3 Uptime Labs Compute Blades with NVMe SSD Storage
+- A [Cloudflare](https://www.cloudflare.com/) account for panxatony-blade-cluster domain, this will be managed by Terraform and external-dns.
 
 ## 📂 Repository structure
 
@@ -66,17 +58,7 @@ The Git repository contains the following directories under `kubernetes` and are
 └─📁 apps          # Apps deployed into the cluster grouped by namespace
 ```
 
-## 🚀 Lets go
-
-Very first step will be to create a new **public** repository by clicking the big green **Use this template** button on this page.
-
-Clone **your new repo** to you local workstation and `cd` into it.
-
-📍 **All of the below commands** are run on your **local** workstation, **not** on any of your cluster nodes.
-
 ### 🔧 Workstation Tools
-
-📍 Install the **most recent version** of the CLI tools below. If you are **having trouble with future steps**, it is very likely you don't have the most recent version of these CLI tools, **!especially sops AND yq!**.
 
 1. Install the following CLI tools on your workstation, if you are **NOT** using [Homebrew](https://brew.sh/) on MacOS or Linux **ignore** steps 4 and 5.
 
@@ -103,7 +85,7 @@ Clone **your new repo** to you local workstation and `cd` into it.
 
 ### ⚠️ pre-commit
 
-It is advisable to install [pre-commit](https://pre-commit.com/) and the pre-commit hooks that come with this repository.
+I followed the advice to install [pre-commit](https://pre-commit.com/) and the pre-commit hooks that come with flux-template repository.
 
 1. Enable Pre-Commit
 
@@ -119,7 +101,7 @@ It is advisable to install [pre-commit](https://pre-commit.com/) and the pre-com
 
 ### 🔐 Setting up Age
 
-📍 Here we will create a Age Private and Public key. Using [SOPS](https://github.com/mozilla/sops) with [Age](https://github.com/FiloSottile/age) allows us to encrypt secrets and use them in Ansible, Terraform and Flux.
+📍 Here I created a Age Private and Public key. Using [SOPS](https://github.com/mozilla/sops) with [Age](https://github.com/FiloSottile/age) allows us to encrypt secrets and use them in Ansible, Terraform and Flux.
 
 1. Create a Age Private / Public Key
 
@@ -145,21 +127,19 @@ It is advisable to install [pre-commit](https://pre-commit.com/) and the pre-com
 
 ### ☁️ Global Cloudflare API Key
 
-In order to use Terraform and `cert-manager` with the Cloudflare DNS challenge you will need to create a API key.
+In order to use Terraform and `cert-manager` with the Cloudflare DNS challenge I created a API key.
 
 1. Head over to Cloudflare and create a API key by going [here](https://dash.cloudflare.com/profile/api-tokens).
 
 2. Under the `API Keys` section, create a global API Key.
 
-3. Use the API Key in the appropriate variable in configuration section below.
-
-📍 You may wish to update this later on to a Cloudflare **API Token** which can be scoped to certain resources. I do not recommend using a Cloudflare **API Key**, however for the purposes of this template it is easier getting started without having to define which scopes and resources are needed. For more information see the [Cloudflare docs on API Keys and Tokens](https://developers.cloudflare.com/api/).
+3. Usedthe API Key in the appropriate variable in configuration section below.
 
 ### 📄 Configuration
 
 📍 The `.config.env` file contains necessary configuration that is needed by Ansible, Terraform and Flux.
 
-1. Copy the `.config.sample.env` to `.config.env` and start filling out all the environment variables.
+1. Copy the `.config.sample.env` to `.config.env` and started filling out all the environment variables.
 
     **All are required** unless otherwise noted in the comments.
 
@@ -179,15 +159,9 @@ In order to use Terraform and `cert-manager` with the Cloudflare DNS challenge y
     task configure
     ```
 
-### ⚡ Preparing Fedora or Ubuntu Server with Ansible
-
-📍 Here we will be running a Ansible Playbook to prepare Fedora or Ubuntu Server for running a Kubernetes cluster.
-
-📍 Nodes are not security hardened by default, you can do this with [dev-sec/ansible-collection-hardening](https://github.com/dev-sec/ansible-collection-hardening) or similar if supported. This is an advanced configuration and generally not recommended unless you want to [DevSecOps](https://www.ibm.com/topics/devsecops) your cluster and nodes.
+### ⚡ Preparing Compute Blades with Ansible
 
 1. Ensure you are able to SSH into your nodes from your workstation using a private SSH key **without a passphrase**. This is how Ansible is able to connect to your remote nodes.
-
-   [How to configure SSH key-based authentication](https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server)
 
 2. Install the Ansible deps
 
@@ -207,7 +181,7 @@ In order to use Terraform and `cert-manager` with the Cloudflare DNS challenge y
     task ansible:ping
     ```
 
-5. Run the Fedora/Ubuntu Server Ansible prepare playbook
+5. Run the Compute Blade Server Ansible prepare playbook
 
     ```sh
     task ansible:prepare
@@ -437,18 +411,6 @@ Flux is pull-based by design meaning it will periodically check your git reposit
 
 Now that you have the webhook url and secret, it's time to set everything up on the Github repository side. Navigate to the settings of your repository on Github, under "Settings/Webhooks" press the "Add webhook" button. Fill in the webhook url and your secret.
 
-### 💾 Storage
-
-Rancher's `local-path-provisioner` is a great start for storage but soon you might find you need more features like replicated block storage, or to connect to a NFS/SMB/iSCSI server. Check out the projects below to read up more on some storage solutions that might work for you.
-
-- [rook-ceph](https://github.com/rook/rook)
-- [longhorn](https://github.com/longhorn/longhorn)
-- [openebs](https://github.com/openebs/openebs)
-- [nfs-subdir-external-provisioner](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner)
-- [democratic-csi](https://github.com/democratic-csi/democratic-csi)
-- [csi-driver-nfs](https://github.com/kubernetes-csi/csi-driver-nfs)
-- [synology-csi](https://github.com/SynologyOpenSource/synology-csi)
-
 ### 🔏 Authenticate Flux over SSH
 
 Authenticating Flux to your git repository has a couple benefits like using a private git repository and/or using the Flux [Image Automation Controllers](https://fluxcd.io/docs/components/image/).
@@ -550,17 +512,10 @@ Note: If a resource exists, running `kubectl -n <namespace> describe <resource> 
 
 Resolving problems that you have could take some tweaking of your YAML manifests in order to get things working, other times it could be a external factor like permissions on NFS. If you are unable to figure out your problem see the help section below.
 
-## 👉 Help
-
-- Make a post in this repository's GitHub [Discussions](https://github.com/onedr0p/flux-cluster-template/discussions).
-- Start a thread in the `support` or `flux-cluster-template` channel in the [k8s@home](https://discord.gg/k8s-at-home) Discord server.
-
 ## ❔ What's next
 
 The world is your cluster, have at it!
 
 ## 🤝 Thanks
 
-Big shout out to all the authors and contributors to the projects that we are using in this repository.
-
-[@whazor](https://github.com/whazor) created [this website](https://nanne.dev/k8s-at-home-search/) as a creative way to search Helm Releases across GitHub. You may use it as a means to get ideas on how to configure an applications' Helm values.
+Big shout out to all the authors and contributors of the [onedr0p/flux-cluster-template](https://github.com/onedr0p/flux-cluster-template) project.
